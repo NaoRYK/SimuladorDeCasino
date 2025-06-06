@@ -8,7 +8,7 @@ string outputDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "output")
 Directory.CreateDirectory(outputDir);
 
 
-int numSimulations = 10;
+int numSimulations = 100;
 int ruinedSessionsCount = 0;
 
 
@@ -38,6 +38,7 @@ double saldoInicial = 100000;
 double saldo = saldoInicial;
 
 
+
 int coste = 1000;
 
 List<Reward> obtainedRewards = new List<Reward>();
@@ -46,7 +47,7 @@ List<Reward> obtainedRewards = new List<Reward>();
 List<Reward> rewardList = new List<Reward>()
 {
     // Mega Jackpot: ×200 de la apuesta (200 000 pesos). Probabilidad = 0.0001 (0.01 %).
-    new Reward(200_000, 0.0001,  "Mega Jackpot(x200)"),
+    new Reward(200_000,0.0001 ,  "Mega Jackpot(x200)"),
 
     // Gran Jackpot: ×50 de la apuesta (50 000 pesos). Probabilidad = 0.0005 (0.05 %).
     new Reward(50_000,  0.0005,  "Gran Jackpot(x50)"),
@@ -61,7 +62,7 @@ List<Reward> rewardList = new List<Reward>()
     new Reward(500,     0.25,    "Reembolso Parcial(x0.5)"),
 
     // Sin Premio: 0 pesos. Probabilidad = 0.1194 (11.94 %).
-    new Reward(0,       0.1194,  "Sin Premio")
+    new Reward(0,        0.1194,  "Sin Premio")
 };
 
 // Inicializo el diccionario de frecuencia en 0 para cada descripción
@@ -82,8 +83,10 @@ void Apostar()
     vecesApostadas++;
 
     // Restar coste y obtener premio
+
     saldo -= coste;
     Reward obtainedReward = getReward();
+    saldo += obtainedReward.Amount;
 
     // Actualizar frecuencia de premios
     frequency[obtainedReward.Description]++;
@@ -237,7 +240,7 @@ void ExportSummary(string path, int sessionIndex)
 //Stringbuilder global
 var allSessionsSb = new StringBuilder();
 
-allSessionsSb.Append("Sesion,SaldoInicial,SaldoFinal,TiradasHastaFin,Ruina,ReachedTargetX2,MaxWinStreak,MaxLossStreak,TotalTiradas");
+allSessionsSb.Append("Sesion,SaldoInicial,SaldoFinal,SaldoMaximoObtenido,TiradasHastaFin,Ruina,ReachedTargetX2,MaxWinStreak,MaxLossStreak,TotalTiradas");
 foreach (var r in rewardList)
 {
     string colName = r.Description.Replace(",", "_");
@@ -251,12 +254,16 @@ for (int s = 1; s <= numSimulations; s++)
 {
     // Reiniciar todas las variables para la nueva sesión 
     ResetSession();
+    double maxSaldo = saldoInicial;
 
     // Bucle interno de tiradas
     while (!ruined && !reachedTarget)
     {
         Apostar();
-
+        if (saldo > maxSaldo)
+        {
+            maxSaldo = saldo;
+        }
     }
 
     //  Contar si esta sesión terminó en ruina
@@ -266,8 +273,9 @@ for (int s = 1; s <= numSimulations; s++)
     //  Acumular el resumen de esta sesión en el StringBuilder global
 
     double finalBal = ruined ? 0 : saldo;
+
     var lineSb = new StringBuilder();
-    lineSb.Append($"{s},{saldoInicial},{finalBal},{tiradasHastaFin},{ruined},{reachedTarget},{maxWinStreak},{maxLossStreak},{vecesApostadas}");
+    lineSb.Append($"{s},{saldoInicial},{finalBal},{maxSaldo},{tiradasHastaFin},{ruined},{reachedTarget},{maxWinStreak},{maxLossStreak},{vecesApostadas}");
 
     foreach (var r in rewardList)
     {
@@ -304,3 +312,4 @@ ExportSummary(pathSummary1, 1);
 // Pausa para salir
 Console.WriteLine("Presiona cualquier tecla para salir.");
 Console.ReadKey();
+
